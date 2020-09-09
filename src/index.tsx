@@ -8,11 +8,18 @@ import 'jquery/dist/jquery.js';
 import 'popper.js/dist/popper.js';
 import 'bootstrap/dist/js/bootstrap.min.js';
 import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
-import { MainMenu } from './components/MainMenu/MainMenu';
+import { MainMenu, MainMenuItems } from './components/MainMenu/MainMenu';
+
+const menuItems = [
+  new MainMenuItems("Home", "/"),
+  new MainMenuItems("About Us", "/page/about-us/"),
+  new MainMenuItems("Contact", "/contact/"),
+  new MainMenuItems("Log In", "user/login/"),
+];
 
 ReactDOM.render(
   <React.StrictMode>
-    <MainMenu></MainMenu>
+    <MainMenu items={ menuItems }></MainMenu>
     <App />
   </React.StrictMode>,
   document.getElementById('root')
