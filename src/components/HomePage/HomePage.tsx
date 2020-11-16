@@ -5,6 +5,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import CategoryType from '../../types/CategoryType';
 import { Link, Redirect } from 'react-router-dom';
 import api, { ApiResponse } from '../../api/api';
+import RoledMainMenu from '../RoledMainMenu/RoledMainMenu';
+import ApiCategoryDto from '../../dtos/ApiCategoryDto';
 
 interface CategoryPageProperies {
     match: {
@@ -17,11 +19,6 @@ interface CategoryPageProperies {
 interface HomePageState {
     isUserLoggedIn: boolean;
     categories: CategoryType[];
-};
-
-interface ApiCategoryDto {
-    categoryId: number;
-    name: string;
 };
 
 class HomePage extends React.Component<CategoryPageProperies> {
@@ -50,7 +47,6 @@ class HomePage extends React.Component<CategoryPageProperies> {
     private getCategories() {
         api('api/category/?filter=parentCategoryId||$isnull', 'get', {})
         .then((res: ApiResponse) => {
-            console.log(res);
             if (res.status === "error" || res.status === "login") {
                 this.setLogginState(false);
                 return;
@@ -94,17 +90,18 @@ class HomePage extends React.Component<CategoryPageProperies> {
 
         return (
             <Container>
-              <Card>
-                  <Card.Body>
-                      <Card.Title>
-                          <FontAwesomeIcon icon={faListAlt}/>Top level categories
-                      </Card.Title>
+                <RoledMainMenu role="user" />
+                <Card>
+                    <Card.Body>
+                        <Card.Title>
+                            <FontAwesomeIcon icon={faListAlt}/>Top level categories
+                        </Card.Title>
 
-                        <Row>
-                        { this.state.categories?.map(this.singleCategory) }
-                        </Row>
-                  </Card.Body>
-              </Card>
+                            <Row>
+                            { this.state.categories?.map(this.singleCategory) }
+                            </Row>
+                    </Card.Body>
+                </Card>
             </Container>
         );
     }

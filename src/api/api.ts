@@ -5,6 +5,7 @@ export default function api(
     path: string,
     method: 'get' | 'post' | 'patch' | 'delete',
     body: any | undefined,
+    role: 'user' | 'administrator' = 'user',
  ) {
      return new Promise<ApiResponse>((resolve) => {
          const requestData = {
@@ -14,14 +15,14 @@ export default function api(
             data: JSON.stringify(body),
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': getToken(),
+                'Authorization': getToken(role),
             },
         };
         axios(requestData)
         .then(res => responseHandler(res, resolve))
         .catch(async err => {
             if(err.response.status === 401) {
-                const newToken = await refreshToken();
+                const newToken = await refreshToken(role);
 
                 if(!newToken) {
                     const response: ApiResponse = {
@@ -31,9 +32,60 @@ export default function api(
                     return resolve(response);
                 }
 
-                saveToken(newToken);
+                saveToken(role, newToken);
 
-                requestData.headers['Authorization'] = getToken();
+                requestData.headers['Authorization'] = getToken(role);
+
+                return await repeatRequest(requestData, resolve);
+
+            }
+
+            const response: ApiResponse = {
+                status: 'error',
+                data: err
+            };
+            return resolve(response);
+        });
+     });  
+}
+
+export function apiFile(
+    path: string,
+    name: string,
+    file: File,
+    role: 'user' | 'administrator' = 'user',
+ ) {
+     return new Promise<ApiResponse>((resolve) => {
+        const formData = new FormData();
+        formData.append(name, file);
+
+         const requestData: AxiosRequestConfig = {
+            method: 'post',
+            url: path,
+            baseURL: ApiConfig.API_URL,
+            data: formData,
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                'Authorization': getToken(role),
+            },
+        };
+        axios(requestData)
+        .then(res => responseHandler(res, resolve))
+        .catch(async err => {
+            if(err.response.status === 401) {
+                const newToken = await refreshToken(role);
+
+                if(!newToken) {
+                    const response: ApiResponse = {
+                        status: 'login',
+                        data: null,
+                    };
+                    return resolve(response);
+                }
+
+                saveToken(role, newToken);
+
+                requestData.headers['Authorization'] = getToken(role);
 
                 return await repeatRequest(requestData, resolve);
 
@@ -73,28 +125,43 @@ async function responseHandler(
         return resolve(response);
 }
 
-function getToken(): string {
-    const token = localStorage.getItem('api_token');
+function getToken(role: 'user' | 'administrator'): string {
+    const token = localStorage.getItem('api_token' + role);
     return 'Berer ' + token;
 }
 
-export function saveToken(token: string) {
-    localStorage.setItem('api_token',token);
+export function saveToken(role: 'user' | 'administrator', token: string) {
+    localStorage.setItem('api_token' + role, token);
 }
 
-function getRefreshToken(): string {
-    const token = localStorage.getItem('api_refresh_token');
+function getRefreshToken(role: 'user' | 'administrator'): string {
+    const token = localStorage.getItem('api_refresh_token' + role);
     return token + '';
 }
 
-export function saveRefreshToken(token: string) {
-    localStorage.setItem('api_refresh_token', token);
+export function saveRefreshToken(role: 'user' | 'administrator', token: string) {
+    localStorage.setItem('api_refresh_token' + role, token);
 }
 
-async function refreshToken(): Promise<string | null> {
-        const path = 'auth/user/refresh';
+export function saveIdentity(role: 'user' | 'administrator', identity: string) {
+    localStorage.setItem('api_identity' + role, identity);
+}
+
+export function getIdentity(role: 'user' | 'administrator'): string {
+    const token = localStorage.getItem('api_identity' + role);
+    return 'Berer ' + token;
+}
+
+export function removeTokenData(role: 'user' | 'administrator') {
+    localStorage.removeItem('api_token' +role);
+    localStorage.removeItem('api_refresh_token' +role);
+    localStorage.removeItem('api_identity' +role);
+}
+
+async function refreshToken(role: 'user' | 'administrator'): Promise<string | null> {
+        const path = 'auth/' + role + '/refresh';
         const data = {
-            token: getRefreshToken(),
+            token: getRefreshToken(role),
         }
 
         const refreshTokenRequestData: AxiosRequestConfig = {
